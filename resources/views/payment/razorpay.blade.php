@@ -43,14 +43,14 @@
                                 <form action="{{ route('make.razorpay.pay') }}" method="POST" >
                                     @csrf
                                     <script src="https://checkout.razorpay.com/v1/checkout.js"
-                                            data-key="rzp_test_CpEytHq6th7WPf"
+                                            data-key="{{ env('RAZORPAY_SECRET') }}"
                                             data-amount="1000"
                                             data-buttontext="Pay 10 INR"
                                             data-name="vishpa.com"
                                             data-description="Rozerpay"
                                             data-image="https://laraveltuts.com/wp-content/uploads/2022/08/laraveltuts-rounde-logo.png"
                                             data-prefill.name="Vikas"
-                                            data-prefill.email="vikas.workrush@gmail.com"
+                                            data-prefill.email="vikas.web@gmail.com"
                                             data-theme.color="#ff7529">
                                     </script>
                                 </form>

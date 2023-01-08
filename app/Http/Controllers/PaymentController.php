@@ -23,7 +23,7 @@ class PaymentController extends Controller
     {
         $input = $request->all();
   
-        $api = new Api("rzp_test_CpEytHq6th7WPf", "XuDoVoAznatrbubeWerWKD65");
+        $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
   
         $payment = $api->payment->fetch($input['razorpay_payment_id']);
   
@@ -33,7 +33,7 @@ class PaymentController extends Controller
   
             } catch (Exception $e) {
                 return  $e->getMessage();
-                \Session::put('error',$e->getMessage());
+                Session::put('error',$e->getMessage());
                 return redirect()->back();
             }
         }
