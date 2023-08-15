@@ -147,4 +147,95 @@ class PaymentController extends Controller
         // flash(translate('Your order has been placed successfully. Please submit payment information from purchase history'))->success();
         // return redirect()->route('order_confirmed');
     }
+
+    // Refund API from api
+    public function phonePeRefundAPI(Request $request,$tra_id)
+    {
+        $amount = session()->get('refund_api') ?? 100;
+        $payload = [
+            'merchantId' => 'MERCHANTUAT',
+            'merchantUserId' => 'MUID123',
+            'merchantTransactionId' => ($tra_id),
+            'originalTransactionId' => strrev($tra_id),
+            'amount' => $amount * 100,
+            'callbackUrl' => route('phonepe.payment.callback'),
+        ];
+
+        $encode = base64_encode(json_encode($payload));
+
+        $saltKey = '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
+        $saltIndex = 1;
+
+        $string = $encode.'/pg/v1/refund'.$saltKey;
+        $sha256 = hash('sha256',$string);
+
+        $finalXHeader = $sha256.'###'.$saltIndex;
+
+        // $response = Curl::to('https://api-preprod.phonepe.com/apis/merchant-simulator/pg/v1/refund')
+        //         ->withHeader('Content-Type:application/json')
+        //         ->withHeader('X-VERIFY:'.$finalXHeader)
+        //         ->withData(json_encode(['request' => $encode]))
+        //         ->post();
+        
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => 'https://api-preprod.phonepe.com/apis/merchant-simulator/pg/v1/refund',
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => false,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => 'POST',
+          CURLOPT_POSTFIELDS => json_encode(['request' => $encode]),
+          CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json',
+            'X-VERIFY: '.$finalXHeader
+          ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+
+        $rData = json_decode($response);
+
+
+
+        $finalXHeader1 = hash('sha256','/pg/v1/status/'.'MERCHANTUAT'.'/'.$tra_id.$saltKey).'###'.$saltIndex;
+
+        // $responsestatus = Curl::to('https://api-preprod.phonepe.com/apis/merchant-simulator/pg/v1/status/'.'MERCHANTUAT'.'/'.$tra_id)
+        //         ->withHeader('Content-Type:application/json')
+        //         ->withHeader('accept:application/json')
+        //         ->withHeader('X-VERIFY:'.$finalXHeader1)
+        //         ->withHeader('X-MERCHANT-ID:'.$tra_id)
+        //         ->get();
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => 'https://api-preprod.phonepe.com/apis/merchant-simulator/pg/v1/status/'.'MERCHANTUAT'.'/'.$tra_id,
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => false,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => 'GET',
+          CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json',
+            'accept: application/json',
+            'X-VERIFY: '.$finalXHeader1,
+            'X-MERCHANT-ID: '.$tra_id
+          ),
+        ));
+
+        $responsestatus = curl_exec($curl);
+        $suceess_data = json_decode($responsestatus);
+        curl_close($curl);
+
+        dd(json_decode($response),$suceess_data, $suceess_data->data->transactionId);
+     // dd($rData);
+    }
 }
